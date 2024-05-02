@@ -78,27 +78,28 @@ namespace Final_Project
             };*/
 
             StudentsListView.ItemsSource = students;
-            AverageGradeTextBox.Text = "Average Grade: " + CalcAverage();
+            AverageGradeTextBox.Text = "Average Grade: " + CalcAverage().ToString("0.##");
         }
 
         private double FinalGrade(Student student)
         {
             double sum = 0;
-            int count = 0;
-            student.Details.Any(x => {
-                if (x.ColumnName.Contains("%"))
+            foreach (var col  in student.Details)
+            {
+                if (col.ColumnName.Contains("%"))
                 {
 
-                    string perc = x.ColumnName.Substring(x.ColumnName.Length - 3);
+                    string perc = col.ColumnName.Substring(col.ColumnName.Length - 3);
                     double percentValue = ConvertToDecimalPercentage(perc);
-                    sum += Int32.Parse(x.Detail) * percentValue;
-                    count++;
+                    sum += Int32.Parse(col.Detail) * percentValue;
+
 
                 }
-                return true;
+                
 
-            });
-            return sum / count;
+            }
+          return sum;
+            
 
         }
 
