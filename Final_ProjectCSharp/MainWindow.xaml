@@ -17,11 +17,15 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,10">
             <TextBox x:Name="ExcelPathTextBox" Width="300" Margin="5" />
             <Button x:Name="BrowseButton" Content="Browse" Margin="5" Click="BrowseButton_Click" />
+            <TextBlock Name="Courses" HorizontalAlignment="Center" Text="Courses"  FontSize="20" Margin="5"/>
+            <ComboBox x:Name="CoursesBox" SelectionChanged="CoursesBox_SelectionChanged" Width="309" Height="30" IsReadOnly="True" BorderBrush="Black" BorderThickness="2" FontSize="18" Margin="5">
+                <ComboBoxItem Content="Select" IsSelected="True"/>
+            </ComboBox>
         </StackPanel>
 
         <TextBox x:Name="AverageGradeTextBox" Grid.Row="1" Margin="10,10,10,10" IsReadOnly="True" TextChanged="AverageGradeTextBox_TextChanged" />
 
-        <ListView x:Name="StudentsListView" Grid.Row="2" Margin="10,10,400,200" SelectionChanged="TaskGradesListView_SelectionChanged">
+        <ListView x:Name="StudentsListView" Grid.Row="2" Margin="10,10,400,185" SelectionChanged="TaskGradesListView_SelectionChanged" ItemsSource="{Binding Students}">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Width="100" Header="Students Name" DisplayMemberBinding="{Binding Name}" />
@@ -47,7 +51,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                     <StackPanel Width="386" Height="29" Orientation="Horizontal">
-                        <Label x:Name="StudentFinalGrade" Content="Final Grade:" Width="74" Height="28" VerticalContentAlignment="Bottom" VerticalAlignment="Bottom" Margin="0,0,30,0"/>
+                        <Label x:Name="StudentFinalGrade" Content="Final Grade:" FontWeight="Bold" Width="293" Height="28" VerticalContentAlignment="Bottom" VerticalAlignment="Bottom" Margin="0,0,30,0"/>
                         <Button x:Name="SaveGradesBtn" Click="SaveGradesBtn_Click" Content="Save" Height="22" Width="57"/>
                     </StackPanel>
                 </StackPanel>

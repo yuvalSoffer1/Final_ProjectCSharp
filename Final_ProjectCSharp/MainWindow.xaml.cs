@@ -4,11 +4,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Xml;
+
 
 namespace Final_Project
 {
@@ -16,6 +20,7 @@ namespace Final_Project
     {
         private List<Student> students = new List<Student>();
         private string JsonFilesPath;
+        private string CurrentJsonFilesPath = "";
 
         public MainWindow()
         {
@@ -44,6 +49,7 @@ namespace Final_Project
 
         private void LoadExcelData(string excelFilePath)
         {
+            students = new List<Student>();
             var csv = new List<string[]>();
             var lines = File.ReadAllLines(excelFilePath);
 
@@ -64,11 +70,16 @@ namespace Final_Project
                 }
                 students.Add(objResult);
             }
-
+            int index = System.IO.Path.GetFileName(excelFilePath).Length - 4;
             JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
             string userJsonText = JsonSerializer.Serialize<List<Student>>(students, options);
-            string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileName(excelFilePath)}.json");
+            string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileName(excelFilePath).Substring(0,index)}.json");
+            CurrentJsonFilesPath = $"{jsonFilePath}";
             File.WriteAllText(jsonFilePath, userJsonText);
+            if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonFilePath)))
+            {
+                CoursesBox.Items.Add(System.IO.Path.GetFileName(jsonFilePath));
+            }
             // Code to load data from the Excel file
             // Update the AverageGradeTextBox, StudentsListView, and TaskGradesListView
 
@@ -78,33 +89,29 @@ namespace Final_Project
                 new Student { Name = "John Doe", Tasks = new List<Task> { new Task { TaskName = "Task 1", Grade = 80 }, new Task { TaskName = "Task 2", Grade = 90 } } },
                 new Student { Name = "Jane Smith", Tasks = new List<Task> { new Task { TaskName = "Task 1", Grade = 75 }, new Task { TaskName = "Task 2", Grade = 85 } } }
             };*/
-
+            StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
             StudentsListView.ItemsSource = students;
-            AverageGradeTextBox.Text = "Average Grade: " + CalcAverage();
+            AverageGradeTextBox.Text = "Average Grade: " + CalcAverage(students).ToString("0.##");
         }
 
         private double FinalGrade(Student student)
         {
             double sum = 0;
-            int count = 0;
-            student.Details.Any(x => {
-                if (x.ColumnName.Contains("%"))
+            foreach (var col  in student.Details)
+            {
+                if (col.ColumnName.Contains("%"))
                 {
-
-                    string perc = x.ColumnName.Substring(x.ColumnName.Length - 3);
+                    string perc = col.ColumnName.Substring(col.ColumnName.Length - 3);
                     double percentValue = ConvertToDecimalPercentage(perc);
-                    sum += Int32.Parse(x.Detail) * percentValue;
-                    count++;
-
+                    if (col.Detail == "") 
+                    { col.Detail = "0"; }
+                    sum += double.Parse(col.Detail) * percentValue;
                 }
-                return true;
-
-            });
-            return sum / count;
-
+            }
+          return sum;
         }
 
-        private double CalcAverage()
+        private double CalcAverage(List<Student> students)
         {
             double average = 0;
 
@@ -157,6 +164,7 @@ namespace Final_Project
                         Grade.Items.Add(detail);
                     }
                 }
+                StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
             }
         }
 
@@ -168,6 +176,50 @@ namespace Final_Project
         private void ListBoxProducts_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
+        }
+        private void PutCourseOnView(string excelFilePath)
+        {
+
+            int index = System.IO.Path.GetFileName(excelFilePath).Length - 5;
+            if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(excelFilePath).Substring(0, index)))
+            {
+                CoursesBox.Items.Add(System.IO.Path.GetFileName(excelFilePath).Substring(0, index));
+            }
+            
+            string filename = System.IO.Path.GetFileName(excelFilePath);
+            string text = File.ReadAllText($"{JsonFilesPath}/{filename.Substring(0, index)}");
+            CurrentJsonFilesPath = $"{JsonFilesPath}/{filename.Substring(0, index)}";
+            List<Student> students1 = JsonSerializer.Deserialize<List<Student>>(text);
+            StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
+            StudentsListView.ItemsSource = students1;
+            AverageGradeTextBox.Text = "Average Grade: " + CalcAverage(students1).ToString("0.##");
+
+        }
+        private void CoursesBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Object item = CoursesBox.SelectedItem;
+            if (CoursesBox.SelectedIndex != 0)
+            {
+                string filename=CoursesBox.SelectedValue.ToString();
+                PutCourseOnView($"{JsonFilesPath}/{filename}.json");
+            }
+            else
+            {
+               if(AverageGradeTextBox!=null)
+                {
+                    AverageGradeTextBox.Clear();
+                }
+               if(ExcelPathTextBox!=null)
+                {
+                    ExcelPathTextBox.Clear();
+                }
+               if(StudentsListView!=null)
+                {
+                    StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
+                    StudentsListView.ItemsSource = null;
+                }
+
+            }
         }
 
         private void Grade_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -188,48 +240,53 @@ namespace Final_Project
                 // Retrieve the selected student
                 Student selectedStudent = (Student)StudentsListView.SelectedItem;
 
-                int index = 0;
+                string text = File.ReadAllText($"{CurrentJsonFilesPath}");
+                List<Student> studentsFromJson = JsonSerializer.Deserialize<List<Student>>(text);
                 foreach (var item in Grade.Items)
                 {
-                    var detail = item as Details; // Make sure to cast from object to Details
+                    var detail = item as Details;
                     if (detail != null)
                     {
-                        Console.WriteLine($"ColumnName: {detail.ColumnName}, Detail: {detail.Detail}");
-                    }
-                    /*if (item is StackPanel stackPanel)
-                    {
-
-                        foreach (var child in stackPanel.Children)
+                        foreach (var student in studentsFromJson)
                         {
-                            if (child is TextBox textBox)
+                            if(student.Name == selectedStudent.Name)
                             {
-                                if (textBox.Text == String.Empty)
+                                foreach (var info in student.Details)
                                 {
-                                    selectedStudent.Details.FirstOrDefault(x => {
-                                        x.Detail = "0"
-                                    });
-                                    
-                                    
-                                    textBox.Text = "0";
-                                }
-                                else
-                                {
-                                    var isNumber = double.TryParse(textBox.Text, out double score);
-                                    if (isNumber && score >= 0 && score <= 100)
+                                    if (info.ColumnName == detail.ColumnName)
                                     {
-                                        s.Grades[index].Score = textBox.Text;
-                                    }
-                                    else
-                                    {
-                                        textBox.Text = s.Grades[index].Score;
-                                        MessageBox.Show("Invalid grade!");
+                                        var isNumber = double.TryParse(detail.Detail, out double score);
+                                        if (detail.Detail == String.Empty)
+                                        {
+                                            info.Detail = "0";
+                                        }
+                                        else
+                                        {
+                                            if (isNumber)
+                                            {
+                                                var grade = double.Parse(detail.Detail);
+                                                if(grade >= 0 && grade <= 100)
+                                                {
+                                                    info.Detail = detail.Detail;
+                                                }
+                                                else
+                                                {
+                                                    detail.Detail = info.Detail;
+                                                    MessageBox.Show("Invalid grade!");
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                                ++index;
                             }
                         }
-                    }*/
+                    }
                 }
+                students = studentsFromJson;
+                string modifiedJson = JsonSerializer.Serialize(studentsFromJson);
+                File.WriteAllText($"{CurrentJsonFilesPath}", modifiedJson);
+                StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
+                AverageGradeTextBox.Text = "Average Grade: " + CalcAverage(students).ToString("0.##");
             }
         }
     }
