@@ -180,16 +180,16 @@ namespace Final_Project
         {
 
         }
-        private void PutCourseOnView(string excelFilePath)
+        public void PutCourseOnView(string jsonPath)
         {
 
-            int index = System.IO.Path.GetFileName(excelFilePath).Length - 5;
-            if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(excelFilePath).Substring(0, index)))
+            int index = System.IO.Path.GetFileName(jsonPath).Length - 5;
+            if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonPath).Substring(0, index)))
             {
-                CoursesBox.Items.Add(System.IO.Path.GetFileName(excelFilePath).Substring(0, index));
+                CoursesBox.Items.Add(System.IO.Path.GetFileName(jsonPath).Substring(0, index));
             }
             
-            string filename = System.IO.Path.GetFileName(excelFilePath);
+            string filename = System.IO.Path.GetFileName(jsonPath);
             string text = File.ReadAllText($"{JsonFilesPath}/{filename.Substring(0, index)}");
             CurrentJsonFilesPath = $"{JsonFilesPath}/{filename.Substring(0, index)}";
             List<Student> students1 = JsonSerializer.Deserialize<List<Student>>(text);
@@ -243,8 +243,28 @@ namespace Final_Project
             Object item = CoursesBox.SelectedItem;
             if (CoursesBox.SelectedIndex != 0)
             {
-                factorWindow factorwindow = new factorWindow(excelFilepath);
+                factorWindow factorwindow = new factorWindow(excelFilepath, CurrentJsonFilesPath);
                 factorwindow.Show();
+                if (AverageGradeTextBox != null)
+                {
+                    AverageGradeTextBox.Clear();
+                }
+                if (ExcelPathTextBox != null)
+                {
+                    ExcelPathTextBox.Clear();
+                }
+                if (StudentsListView != null)
+                {
+                    StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
+                    StudentsListView.ItemsSource = null;
+                }
+                if (StudentDetailsList != null)
+                {
+                    StudentDetailsList.Clear();
+                }
+                PutCourseOnView($"{CurrentJsonFilesPath}.json");
+               
+                
 
             }
             

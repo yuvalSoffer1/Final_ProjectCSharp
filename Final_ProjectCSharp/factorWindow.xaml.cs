@@ -12,6 +12,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Final_Project;
+using System.Text.Json;
 
 namespace Final_ProjectCSharp
 {
@@ -20,14 +22,57 @@ namespace Final_ProjectCSharp
     /// </summary>
     public partial class factorWindow : Window
     {
-        public factorWindow(string excelFilePath)
+        private string currentJsonFilesPath = "";
+        public factorWindow(string excelFilePath,string CurrentJsonFilesPath)
         {
             InitializeComponent();
+            currentJsonFilesPath = CurrentJsonFilesPath;
             TasksShow(excelFilePath);
         }
+
         private void AddFactorBtn_Click(object sender, RoutedEventArgs e)
         {
             string task=AssignmentListBox.SelectedItem.ToString();
+            string text = File.ReadAllText($"{currentJsonFilesPath}");
+            List<Student> studentsFromJson = JsonSerializer.Deserialize<List<Student>>(text);
+            string factor = FactorValue.Text;
+            var isNumber = double.TryParse(factor, out double score);
+            if (factor == String.Empty)
+            {
+                factor = "0";
+            }
+            else
+            {
+                if (isNumber)
+                {
+                    var Factor = double.Parse(factor);
+                    if (Factor >= 0 && Factor <= 100)
+                    {
+                        foreach (var student in studentsFromJson)
+                        {
+                            foreach (var info in student.Details)
+                            {
+                                if (info.ColumnName == task)
+                                {
+                                    double newgrade = double.Parse(info.Detail) + Factor;
+                                    if (newgrade > 100){ newgrade = 100; }
+                                    else if (newgrade < 0) {  newgrade = 0; }
+                                    info.Detail = newgrade.ToString();
+                                }
+                            }
+                        }
+                        string modifiedJson = JsonSerializer.Serialize(studentsFromJson);
+                        File.WriteAllText($"{currentJsonFilesPath}", modifiedJson);
+                        
+                    }
+                    else
+                    {
+                        
+                        MessageBox.Show("Invalid factor!");
+                    }
+                }
+            }
+            
 
 
         }
