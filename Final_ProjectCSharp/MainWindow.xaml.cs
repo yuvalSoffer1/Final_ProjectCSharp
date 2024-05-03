@@ -1,13 +1,17 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Xml;
 
 
 namespace Final_Project
@@ -16,6 +20,7 @@ namespace Final_Project
     {
         private List<Student> students = new List<Student>();
         private string JsonFilesPath;
+        private string CurrentJsonFilesPath = "";
 
         public MainWindow()
         {
@@ -69,6 +74,7 @@ namespace Final_Project
             JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
             string userJsonText = JsonSerializer.Serialize<List<Student>>(students, options);
             string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileName(excelFilePath).Substring(0,index)}.json");
+            CurrentJsonFilesPath = $"{jsonFilePath}";
             File.WriteAllText(jsonFilePath, userJsonText);
             if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonFilePath)))
             {
@@ -95,21 +101,14 @@ namespace Final_Project
             {
                 if (col.ColumnName.Contains("%"))
                 {
-
                     string perc = col.ColumnName.Substring(col.ColumnName.Length - 3);
                     double percentValue = ConvertToDecimalPercentage(perc);
                     if (col.Detail == "") 
                     { col.Detail = "0"; }
-                    sum += Int32.Parse(col.Detail) * percentValue;
-
-
+                    sum += double.Parse(col.Detail) * percentValue;
                 }
-                
-
             }
           return sum;
-            
-
         }
 
         private double CalcAverage(List<Student> students)
@@ -155,7 +154,17 @@ namespace Final_Project
 
                 // Display the details of the selected student in the TextBoxes
                 StudentDetailsList.Text = selectedStudent.ToString();
-                // Update other TextBoxes with the details of the selected student
+
+                //extract course and grade for each one.
+                Grade.Items.Clear();
+                foreach (var detail in selectedStudent.Details)
+                {
+                    if (detail.ColumnName.Contains("%"))
+                    {
+                        Grade.Items.Add(detail);
+                    }
+                }
+                StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
             }
         }
 
@@ -178,20 +187,12 @@ namespace Final_Project
             }
             
             string filename = System.IO.Path.GetFileName(excelFilePath);
-            string currDir = Directory.GetCurrentDirectory();
-            string JsonFilesPath = System.IO.Path.Combine(currDir, "JsonFiles");
             string text = File.ReadAllText($"{JsonFilesPath}/{filename.Substring(0, index)}");
+            CurrentJsonFilesPath = $"{JsonFilesPath}/{filename.Substring(0, index)}";
             List<Student> students1 = JsonSerializer.Deserialize<List<Student>>(text);
             StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
             StudentsListView.ItemsSource = students1;
             AverageGradeTextBox.Text = "Average Grade: " + CalcAverage(students1).ToString("0.##");
-
-
-
-
-
-
-
 
         }
         private void CoursesBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -227,11 +228,75 @@ namespace Final_Project
                 }
 
             }
-           
-
-            
         }
 
+        private void Grade_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void SaveGradesBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (StudentsListView.SelectedItem != null)
+            {
+                // Retrieve the selected student
+                Student selectedStudent = (Student)StudentsListView.SelectedItem;
+
+                string text = File.ReadAllText($"{CurrentJsonFilesPath}");
+                List<Student> studentsFromJson = JsonSerializer.Deserialize<List<Student>>(text);
+                foreach (var item in Grade.Items)
+                {
+                    var detail = item as Details;
+                    if (detail != null)
+                    {
+                        foreach (var student in studentsFromJson)
+                        {
+                            if(student.Name == selectedStudent.Name)
+                            {
+                                foreach (var info in student.Details)
+                                {
+                                    if (info.ColumnName == detail.ColumnName)
+                                    {
+                                        var isNumber = double.TryParse(detail.Detail, out double score);
+                                        if (detail.Detail == String.Empty)
+                                        {
+                                            info.Detail = "0";
+                                        }
+                                        else
+                                        {
+                                            if (isNumber)
+                                            {
+                                                var grade = double.Parse(detail.Detail);
+                                                if(grade >= 0 && grade <= 100)
+                                                {
+                                                    info.Detail = detail.Detail;
+                                                }
+                                                else
+                                                {
+                                                    detail.Detail = info.Detail;
+                                                    MessageBox.Show("Invalid grade!");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                students = studentsFromJson;
+                string modifiedJson = JsonSerializer.Serialize(studentsFromJson);
+                File.WriteAllText($"{CurrentJsonFilesPath}", modifiedJson);
+                StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
+                AverageGradeTextBox.Text = "Average Grade: " + CalcAverage(students).ToString("0.##");
+            }
+        }
     }
 
     public class Student
@@ -247,16 +312,21 @@ namespace Final_Project
             // Using StringBuilder for efficient string concatenation
             System.Text.StringBuilder stringBuilder = new System.Text.StringBuilder();
 
+            stringBuilder.Append("Name");
+            stringBuilder.Append(" - ");
             stringBuilder.Append(Name);
-            stringBuilder.Append(" : \n");
+            stringBuilder.Append(". \n");
 
             // Iterate through the Details list and append each detail to the StringBuilder
             foreach (var detail in Details)
             {
-                stringBuilder.Append(detail.ColumnName);
-                stringBuilder.Append(" - ");
-                stringBuilder.Append(detail.Detail);
-                stringBuilder.Append(", \n");
+                if (!detail.ColumnName.Contains("%"))
+                {
+                    stringBuilder.Append(detail.ColumnName);
+                    stringBuilder.Append(" - ");
+                    stringBuilder.Append(detail.Detail);
+                    stringBuilder.Append(". \n");
+                }
             }
 
             // Remove the trailing newline character
@@ -264,10 +334,7 @@ namespace Final_Project
 
             return stringBuilder.ToString();
         }
-        
     }
-
-   
 
     public class Details
     {
@@ -276,13 +343,4 @@ namespace Final_Project
 
     }
 
-    public class ReadAndParseJsonFileWithNewtonsoftJson
-    {
-        private readonly string _sampleJsonFilePath;
-
-        public ReadAndParseJsonFileWithNewtonsoftJson(string sampleJsonFilePath)
-        {
-            _sampleJsonFilePath = sampleJsonFilePath;
-        }
-    }
 }
