@@ -201,6 +201,10 @@ namespace Final_Project
             {
                 string filename=CoursesBox.SelectedValue.ToString();
                 PutCourseOnView($"{JsonFilesPath}/{filename}.json");
+                if (StudentDetailsList != null)
+                {
+                    StudentDetailsList.Clear();
+                }
             }
             else
             {
@@ -216,6 +220,10 @@ namespace Final_Project
                 {
                     StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
                     StudentsListView.ItemsSource = null;
+                }
+                if (StudentDetailsList != null)
+                {
+                    StudentDetailsList.Clear();
                 }
 
             }
