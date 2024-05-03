@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using Final_ProjectCSharp;
 
 
 namespace Final_Project
@@ -16,6 +17,7 @@ namespace Final_Project
     {
         private List<Student> students = new List<Student>();
         private string JsonFilesPath;
+        private string excelFilepath;
 
         public MainWindow()
         {
@@ -38,6 +40,7 @@ namespace Final_Project
             if (fileDialog.ShowDialog() == true)
             {
                 ExcelPathTextBox.Text = fileDialog.FileName;
+                excelFilepath = fileDialog.FileName;
                 LoadExcelData(fileDialog.FileName);
             }
         }
@@ -230,6 +233,21 @@ namespace Final_Project
            
 
             
+        }
+        private void FactorBtn_Click(object sender, RoutedEventArgs e)
+
+        {
+            string filename = CoursesBox.SelectedValue.ToString();
+
+            Object item = CoursesBox.SelectedItem;
+            if (CoursesBox.SelectedIndex != 0)
+            {
+                factorWindow factorwindow = new factorWindow(excelFilepath);
+                factorwindow.Show();
+
+            }
+            
+           
         }
 
     }
