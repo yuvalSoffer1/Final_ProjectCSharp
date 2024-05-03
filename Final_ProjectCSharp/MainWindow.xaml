@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Final_Project"
         mc:Ignorable="d"
-        Title="MainWindow" Height="593" Width="800">
+        Title="MainWindow" Height="608" Width="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -37,6 +37,27 @@
         <TextBox x:Name="StudentDetailsList" Margin="405,35,64,187" Grid.Row="2" />
         <Button Name="FactorBtn" Click="FactorBtn_Click" Width="55"  Height="30" Content="Factor" FontSize="16" FontWeight="DemiBold"   BorderThickness="1" Margin="622,120,123,151" Grid.Row="2" RenderTransformOrigin="0.515,0.558"/>
 
+        <Label Content="Grades" Height="37" Width="300" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,126,0,0" Grid.Row="2"/>
+        <StackPanel Grid.Row="2" Margin="-195,155,195,10" Grid.RowSpan="2">
+            <Border BorderBrush="Black" BorderThickness="2" Height="304" HorizontalAlignment="Center" Width="390">
+                <StackPanel Height="304" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ListBox x:Name="Grade" ItemsSource="{Binding Details}" Width="386" Height="275">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding ColumnName}" Width="100" Margin="5"/>
+                                    <TextBox Text="{Binding Detail, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="5"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel Width="386" Height="29" Orientation="Horizontal">
+                        <Label x:Name="StudentFinalGrade" Content="Final Grade:" FontWeight="Bold" Width="293" Height="28" VerticalContentAlignment="Bottom" VerticalAlignment="Bottom" Margin="0,0,30,0"/>
+                        <Button x:Name="SaveGradesBtn" Click="SaveGradesBtn_Click" Content="Save" Height="22" Width="57"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
 
     </Grid>
 </Window>
