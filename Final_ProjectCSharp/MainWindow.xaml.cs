@@ -1,8 +1,10 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -145,7 +147,16 @@ namespace Final_Project
 
                 // Display the details of the selected student in the TextBoxes
                 StudentDetailsList.Text = selectedStudent.ToString();
-                // Update other TextBoxes with the details of the selected student
+
+                //extract course and grade for each one.
+                Grade.Items.Clear();
+                foreach (var detail in selectedStudent.Details)
+                {
+                    if (detail.ColumnName.Contains("%"))
+                    {
+                        Grade.Items.Add(detail);
+                    }
+                }
             }
         }
 
@@ -157,6 +168,69 @@ namespace Final_Project
         private void ListBoxProducts_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
+        }
+
+        private void Grade_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void SaveGradesBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (StudentsListView.SelectedItem != null)
+            {
+                // Retrieve the selected student
+                Student selectedStudent = (Student)StudentsListView.SelectedItem;
+
+                int index = 0;
+                foreach (var item in Grade.Items)
+                {
+                    var detail = item as Details; // Make sure to cast from object to Details
+                    if (detail != null)
+                    {
+                        Console.WriteLine($"ColumnName: {detail.ColumnName}, Detail: {detail.Detail}");
+                    }
+                    /*if (item is StackPanel stackPanel)
+                    {
+
+                        foreach (var child in stackPanel.Children)
+                        {
+                            if (child is TextBox textBox)
+                            {
+                                if (textBox.Text == String.Empty)
+                                {
+                                    selectedStudent.Details.FirstOrDefault(x => {
+                                        x.Detail = "0"
+                                    });
+                                    
+                                    
+                                    textBox.Text = "0";
+                                }
+                                else
+                                {
+                                    var isNumber = double.TryParse(textBox.Text, out double score);
+                                    if (isNumber && score >= 0 && score <= 100)
+                                    {
+                                        s.Grades[index].Score = textBox.Text;
+                                    }
+                                    else
+                                    {
+                                        textBox.Text = s.Grades[index].Score;
+                                        MessageBox.Show("Invalid grade!");
+                                    }
+                                }
+                                ++index;
+                            }
+                        }
+                    }*/
+                }
+            }
         }
     }
 
@@ -173,16 +247,21 @@ namespace Final_Project
             // Using StringBuilder for efficient string concatenation
             System.Text.StringBuilder stringBuilder = new System.Text.StringBuilder();
 
+            stringBuilder.Append("Name");
+            stringBuilder.Append(" - ");
             stringBuilder.Append(Name);
-            stringBuilder.Append(" : \n");
+            stringBuilder.Append(". \n");
 
             // Iterate through the Details list and append each detail to the StringBuilder
             foreach (var detail in Details)
             {
-                stringBuilder.Append(detail.ColumnName);
-                stringBuilder.Append(" - ");
-                stringBuilder.Append(detail.Detail);
-                stringBuilder.Append(", \n");
+                if (!detail.ColumnName.Contains("%"))
+                {
+                    stringBuilder.Append(detail.ColumnName);
+                    stringBuilder.Append(" - ");
+                    stringBuilder.Append(detail.Detail);
+                    stringBuilder.Append(". \n");
+                }
             }
 
             // Remove the trailing newline character
