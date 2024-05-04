@@ -27,7 +27,7 @@ namespace Final_Project
         public MainWindow()
         {
             InitializeComponent();
-
+            this.Title = "course avarge";
             // Creates a directory that will contain all the JSON files
             string currDir = Directory.GetCurrentDirectory();
             JsonFilesPath = System.IO.Path.Combine(currDir, "JsonFiles");
@@ -44,7 +44,8 @@ namespace Final_Project
                 string[] fileNames = new string[jsonFiles.Length];
                 for (int i = 0; i < jsonFiles.Length; i++)
                 {
-                    fileNames[i] = System.IO.Path.GetFileNameWithoutExtension(jsonFiles[i]);
+                    int index = System.IO.Path.GetFileNameWithoutExtension(jsonFiles[i]).Length-11;
+                    fileNames[i] = System.IO.Path.GetFileNameWithoutExtension(jsonFiles[i]).Substring(0,index);
                 }
 
                 // Populate the ComboBox with the filenames
@@ -107,18 +108,21 @@ namespace Final_Project
                 students.Sort((s1, s2) => string.Compare(s1.Name, s2.Name, StringComparison.OrdinalIgnoreCase));
                 JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
                 string userJsonText = JsonSerializer.Serialize<List<Student>>(students, options);
-                string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileNameWithoutExtension(excelFilePath)}.json");
+                string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileNameWithoutExtension(excelFilePath)}_{DateTime.Today.ToString("dd-MM-yyyy")}.json");
+                int index = System.IO.Path.GetFileName(jsonFilePath).Length - 16;
+                string sub = System.IO.Path.GetFileName(jsonFilePath).Substring(0, index);
                 CurrentJsonFilesPath = $"{jsonFilePath}";
                 File.WriteAllText(jsonFilePath, userJsonText);
-                if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonFilePath)))
+                if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonFilePath.Substring(0,index))))
                 {
-                    CoursesBox.Items.Add(System.IO.Path.GetFileNameWithoutExtension(jsonFilePath));
+                    CoursesBox.Items.Add(System.IO.Path.GetFileNameWithoutExtension(jsonFilePath.Substring(0, index)));
                 }
                 StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
                 StudentsListView.ItemsSource = students;
-                AverageGradeTextBox.Text = $"{System.IO.Path.GetFileNameWithoutExtension(jsonFilePath)} - Average Grade: " + CalcAverage(students).ToString("0.##");
+                AverageGradeTextBox.Text = $"{System.IO.Path.GetFileNameWithoutExtension(jsonFilePath.Substring(0, index))} - Average Grade: " + CalcAverage(students).ToString("0.##");
                 Grade.Items.Clear();
                 StudentFinalGrade.Content = "Final Grade:";
+                this.Title = $"{sub}";
                 StudentDetailsList.Clear();
             }
             catch (Exception ex)
@@ -213,10 +217,11 @@ namespace Final_Project
         public void PutCourseOnView(string jsonPath)
         {
 
-            int index = System.IO.Path.GetFileName(jsonPath).Length - 5;
-            if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonPath).Substring(0, index)))
+            int index = System.IO.Path.GetFileName(jsonPath).Length - 16;
+            string sub = System.IO.Path.GetFileName(jsonPath).Substring(0,index);
+            if (!CoursesBox.Items.Contains(sub))
             {
-                CoursesBox.Items.Add(System.IO.Path.GetFileName(jsonPath).Substring(0, index));
+                CoursesBox.Items.Add(sub);
             }
             
             string filename = System.IO.Path.GetFileNameWithoutExtension(jsonPath);
@@ -226,7 +231,8 @@ namespace Final_Project
             students1.Sort((s1, s2) => string.Compare(s1.Name, s2.Name, StringComparison.OrdinalIgnoreCase));
             StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
             StudentsListView.ItemsSource = students1;
-            AverageGradeTextBox.Text = $"{filename} - Average Grade: " + CalcAverage(students1).ToString("0.##");
+            AverageGradeTextBox.Text = $"{sub} - Average Grade: " + CalcAverage(students1).ToString("0.##");
+            this.Title = sub;
             if (Grade != null)
             {
                 Grade.Items.Clear();
@@ -242,7 +248,15 @@ namespace Final_Project
                 string filename=CoursesBox.SelectedValue.ToString();
                 if (!filename.Contains(".json"))
                 {
-                    filename = $"{filename}.json";
+                    string[] jsonFiles = Directory.GetFiles(JsonFilesPath, "*.json");
+                    foreach (string jsonFile in jsonFiles)
+                    {
+                        if (jsonFile.Contains(filename))
+                        {
+                            filename = jsonFile;
+                        }
+                    }
+                    
                 }
                 PutCourseOnView($"{JsonFilesPath}/{filename}");
                 if (StudentDetailsList != null)
@@ -274,6 +288,7 @@ namespace Final_Project
                     Grade.Items.Clear();
                     StudentFinalGrade.Content = "Final Grade:";
                 }
+                this.Title = "course avarge";
 
             }  
         }
