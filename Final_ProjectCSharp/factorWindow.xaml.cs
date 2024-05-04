@@ -27,12 +27,12 @@ namespace Final_ProjectCSharp
         {
             InitializeComponent();
             currentJsonFilesPath = CurrentJsonFilesPath;
-            TasksShow(excelFilePath);
+            TasksShow();
         }
 
         private void AddFactorBtn_Click(object sender, RoutedEventArgs e)
         {
-            string task=AssignmentListBox.SelectedItem.ToString();
+            string task = AssignmentListBox.SelectedItem.ToString();
             string text = File.ReadAllText($"{currentJsonFilesPath}");
             List<Student> studentsFromJson = JsonSerializer.Deserialize<List<Student>>(text);
             string factor = FactorValue.Text;
@@ -63,33 +63,34 @@ namespace Final_ProjectCSharp
                         }
                         string modifiedJson = JsonSerializer.Serialize(studentsFromJson);
                         File.WriteAllText($"{currentJsonFilesPath}", modifiedJson);
-                        
+                        MessageBox.Show($"Students in Course - {System.IO.Path.GetFileNameWithoutExtension(currentJsonFilesPath)}\ngot {factor} factor on task '{task}' ");
                     }
                     else
                     {
-                        
                         MessageBox.Show("Invalid factor!");
                     }
                 }
             }
-            
-
-
         }
-        private void TasksShow(string excelFilePath)
-
+        private void TasksShow()
         {
-            var lines = File.ReadAllLines(excelFilePath);
-            var properties = lines[0].Split(',');
             var newProp = new List<String>();
-            foreach ( String task in properties) 
+            if (!currentJsonFilesPath.Contains(".json"))
             {
-                if (task.Contains("%"))
+                currentJsonFilesPath = $"{currentJsonFilesPath}.json";
+            }
+            string text = File.ReadAllText($"{currentJsonFilesPath}");
+            List<Student> studentsFromJson = JsonSerializer.Deserialize<List<Student>>(text);
+            foreach(var student in studentsFromJson)
+            {
+                foreach(var info in student.Details)
                 {
-                    newProp.Add(task);
-
+                    if (info.ColumnName.Contains("%"))
+                    {
+                        newProp.Add(info.ColumnName);
+                    }
                 }
-                
+                break;
             }
             AssignmentListBox.ItemsSource = newProp;
 

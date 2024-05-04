@@ -9,7 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="jsons\" />
+    <Compile Remove="jsons\**" />
+    <EmbeddedResource Remove="jsons\**" />
+    <None Remove="jsons\**" />
+    <Page Remove="jsons\**" />
   </ItemGroup>
 
 </Project>
