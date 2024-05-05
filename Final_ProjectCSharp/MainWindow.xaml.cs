@@ -1,18 +1,9 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Shapes;
-using System.Xml;
-using Final_ProjectCSharp;
+
 
 
 namespace Final_ProjectCSharp
@@ -56,19 +47,9 @@ namespace Final_ProjectCSharp
             }
         }
 
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog fileDialog = new OpenFileDialog();
-            fileDialog.Filter = "Excel Files (*.csv)|*.csv";
+        #region buttons
 
-            if (fileDialog.ShowDialog() == true)
-            {
-                ExcelPathTextBox.Text = fileDialog.FileName;
-                excelFilepath = fileDialog.FileName;
-                LoadExcelData(fileDialog.FileName);
-            }
-        }
-
+        //load excel file and create a json file assccoited 
         private void LoadExcelData(string excelFilePath)
         {
             try
@@ -99,8 +80,10 @@ namespace Final_ProjectCSharp
                         {
                             detail = csv[i][j];
                         }
-                        objResult.Details.Add(new Details { 
-                            ColumnName = properties[j], Detail = detail
+                        objResult.Details.Add(new Details
+                        {
+                            ColumnName = properties[j],
+                            Detail = detail
                         });
                     }
                     students.Add(objResult);
@@ -131,148 +114,23 @@ namespace Final_ProjectCSharp
             }
         }
 
-        private double FinalGrade(Student student)
+
+        //open window to browse csv file to load
+        private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            double sum = 0;
-            foreach (var col  in student.Details)
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "Excel Files (*.csv)|*.csv";
+
+            if (fileDialog.ShowDialog() == true)
             {
-                if (col.ColumnName.Contains("%"))
-                {
-                    string perc = col.ColumnName.Substring(col.ColumnName.Length - 3);
-                    double percentValue = ConvertToDecimalPercentage(perc);
-                    if (col.Detail == "") 
-                    { col.Detail = "0"; }
-                    sum += double.Parse(col.Detail) * percentValue;
-                }
-            }
-          return sum;
-        }
-
-        private double CalcAverage(List<Student> students)
-        {
-            double average = 0;
-
-            foreach (Student student in students)
-            {
-                average += FinalGrade(student);
-            }
-            return average / students.Count();
-        }
-
-        static double ConvertToDecimalPercentage(string percentString)
-        {
-            // Remove the "%" symbol
-            string numericPart = percentString.TrimEnd('%');
-
-            // Convert to a double and divide by 100 to get the decimal equivalent
-            double percentValue = double.Parse(numericPart) / 100.0;
-
-            return percentValue;
-        }
-
-        private void TaskGradesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (StudentsListView.SelectedItem != null)
-            {
-                // Retrieve the selected student
-                Student selectedStudent = (Student)StudentsListView.SelectedItem;
-
-                // Display the details of the selected student in the TextBoxes
-                StudentDetailsList.Text = selectedStudent.ToString();
-
-                //extract course and grade for each one.
-                Grade.Items.Clear();
-                foreach (var detail in selectedStudent.Details)
-                {
-                    if (detail.ColumnName.Contains("%"))
-                    {
-                        Grade.Items.Add(detail);
-                    }
-                }
-                StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
+                ExcelPathTextBox.Text = fileDialog.FileName;
+                excelFilepath = fileDialog.FileName;
+                LoadExcelData(fileDialog.FileName);
             }
         }
 
-        public void PutCourseOnView(string jsonPath)
-        {
-
-            int index = System.IO.Path.GetFileNameWithoutExtension(jsonPath).IndexOf("+");
-            string sub = System.IO.Path.GetFileNameWithoutExtension(jsonPath).Substring(0,index);
-            if (!CoursesBox.Items.Contains(sub))
-            {
-                CoursesBox.Items.Add(sub);
-            }
-            
-            string filename = System.IO.Path.GetFileNameWithoutExtension(jsonPath);
-            string text = File.ReadAllText($"{JsonFilesPath}/{filename}.json");
-            CurrentJsonFilesPath = $"{JsonFilesPath}/{filename}";
-            List<Student> students1 = JsonSerializer.Deserialize<List<Student>>(text);
-            students1.Sort((s1, s2) => string.Compare(s1.Name, s2.Name, StringComparison.OrdinalIgnoreCase));
-            StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
-            StudentsListView.ItemsSource = students1;
-            AverageGradeTextBox.Text = $"{sub} - Average Grade: " + CalcAverage(students1).ToString("0.##");
-            this.Title = sub;
-            if (Grade != null)
-            {
-                Grade.Items.Clear();
-                StudentFinalGrade.Content = "Final Grade:";
-            }
-
-        }
-        private void CoursesBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            Object item = CoursesBox.SelectedItem;
-            if (CoursesBox.SelectedIndex != 0)
-            {
-                string filename=CoursesBox.SelectedValue.ToString();
-                if (!filename.Contains(".json"))
-                {
-                    string[] jsonFiles = Directory.GetFiles(JsonFilesPath, "*.json");
-                    foreach (string jsonFile in jsonFiles)
-                    {
-                        if (jsonFile.Contains(filename))
-                        {
-                            filename = jsonFile;
-                        }
-                    }
-                    
-                }
-                PutCourseOnView($"{JsonFilesPath}/{filename}");
-                if (StudentDetailsList != null)
-                {
-                    StudentDetailsList.Clear();
-                }
-            }
-            else
-            {
-               if(AverageGradeTextBox!=null)
-                {
-                    AverageGradeTextBox.Clear();
-                }
-               if(ExcelPathTextBox!=null)
-                {
-                    ExcelPathTextBox.Clear();
-                }
-               if(StudentsListView!=null)
-                {
-                    StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
-                    StudentsListView.ItemsSource = null;
-                }
-                if (StudentDetailsList != null)
-                {
-                    StudentDetailsList.Clear();
-                }
-                if (Grade != null)
-                {
-                    Grade.Items.Clear();
-                    StudentFinalGrade.Content = "Final Grade:";
-                }
-                this.Title = "course avarge";
-
-            }  
-        }
+        //open window for adding factor
         private void FactorBtn_Click(object sender, RoutedEventArgs e)
-
         {
             string filename = CoursesBox.SelectedValue.ToString();
 
@@ -308,12 +166,7 @@ namespace Final_ProjectCSharp
             }
         }
 
-        private void factorwindow_OnClosed(object sender, EventArgs e)
-        {
-            // Call the function in the MainWindow
-            PutCourseOnView(CurrentJsonFilesPath);
-        }
-
+        //save changes in grade for selected student
         private void SaveGradesBtn_Click(object sender, RoutedEventArgs e)
         {
             if (StudentsListView.SelectedItem != null)
@@ -334,7 +187,7 @@ namespace Final_ProjectCSharp
                     {
                         foreach (var student in studentsFromJson)
                         {
-                            if(student.Name == selectedStudent.Name)
+                            if (student.Name == selectedStudent.Name)
                             {
                                 foreach (var info in student.Details)
                                 {
@@ -350,7 +203,7 @@ namespace Final_ProjectCSharp
                                             if (isNumber)
                                             {
                                                 var grade = double.Parse(detail.Detail);
-                                                if(grade >= 0 && grade <= 100)
+                                                if (grade >= 0 && grade <= 100)
                                                 {
                                                     info.Detail = detail.Detail;
                                                 }
@@ -377,50 +230,165 @@ namespace Final_ProjectCSharp
                 AverageGradeTextBox.Text = $"{sub} - Average Grade: " + CalcAverage(students).ToString("0.##");
             }
         }
-    }
 
-    /*public class Student
-    {
-        public string Name { get; set; }
-        public List<Details> Details { get; set; }
-
-        public override string ToString()
+        //load selected student from the list by click
+        private void TaskGradesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (Details == null || Details.Count == 0)
-                return base.ToString();
-
-            // Using StringBuilder for efficient string concatenation
-            System.Text.StringBuilder stringBuilder = new System.Text.StringBuilder();
-
-            stringBuilder.Append("Name");
-            stringBuilder.Append(" - ");
-            stringBuilder.Append(Name);
-            stringBuilder.Append(". \n");
-
-            // Iterate through the Details list and append each detail to the StringBuilder
-            foreach (var detail in Details)
+            if (StudentsListView.SelectedItem != null)
             {
-                if (!detail.ColumnName.Contains("%"))
+                // Retrieve the selected student
+                Student selectedStudent = (Student)StudentsListView.SelectedItem;
+
+                // Display the details of the selected student in the TextBoxes
+                StudentDetailsList.Text = selectedStudent.ToString();
+
+                //extract course and grade for each one.
+                Grade.Items.Clear();
+                foreach (var detail in selectedStudent.Details)
                 {
-                    stringBuilder.Append(detail.ColumnName);
-                    stringBuilder.Append(" - ");
-                    stringBuilder.Append(detail.Detail);
-                    stringBuilder.Append(". \n");
+                    if (detail.ColumnName.Contains("%"))
+                    {
+                        Grade.Items.Add(detail);
+                    }
+                }
+                StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
+            }
+        }
+
+        //load selected course from json file
+        private void CoursesBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Object item = CoursesBox.SelectedItem;
+            if (CoursesBox.SelectedIndex != 0)
+            {
+                string filename = CoursesBox.SelectedValue.ToString();
+                if (!filename.Contains(".json"))
+                {
+                    string[] jsonFiles = Directory.GetFiles(JsonFilesPath, "*.json");
+                    foreach (string jsonFile in jsonFiles)
+                    {
+                        if (jsonFile.Contains(filename))
+                        {
+                            filename = jsonFile;
+                        }
+                    }
+
+                }
+                PutCourseOnView($"{JsonFilesPath}/{filename}");
+                if (StudentDetailsList != null)
+                {
+                    StudentDetailsList.Clear();
                 }
             }
+            else
+            {
+                if (AverageGradeTextBox != null)
+                {
+                    AverageGradeTextBox.Clear();
+                }
+                if (ExcelPathTextBox != null)
+                {
+                    ExcelPathTextBox.Clear();
+                }
+                if (StudentsListView != null)
+                {
+                    StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
+                    StudentsListView.ItemsSource = null;
+                }
+                if (StudentDetailsList != null)
+                {
+                    StudentDetailsList.Clear();
+                }
+                if (Grade != null)
+                {
+                    Grade.Items.Clear();
+                    StudentFinalGrade.Content = "Final Grade:";
+                }
+                this.Title = "course avarge";
 
-            // Remove the trailing newline character
-            stringBuilder.Remove(stringBuilder.Length - 1, 1);
-
-            return stringBuilder.ToString();
+            }
         }
-    }*/
+        #endregion
 
-/*    public class Details
-    {
-        public string ColumnName { get; set; }
-        public string Detail { get; set; }
+        #region viewOnChange
 
-    }*/
+        //calculate final grade for provided student
+        private double FinalGrade(Student student)
+        {
+            double sum = 0;
+            foreach (var col  in student.Details)
+            {
+                if (col.ColumnName.Contains("%"))
+                {
+                    string perc = col.ColumnName.Substring(col.ColumnName.Length - 3);
+                    double percentValue = ConvertToDecimalPercentage(perc);
+                    if (col.Detail == "") 
+                    { col.Detail = "0"; }
+                    sum += double.Parse(col.Detail) * percentValue;
+                }
+            }
+          return sum;
+        }
 
+        //calculate the average grade for a course
+        private double CalcAverage(List<Student> students)
+        {
+            double average = 0;
+
+            foreach (Student student in students)
+            {
+                average += FinalGrade(student);
+            }
+            return average / students.Count();
+        }
+
+        //convert string with % to double
+        static double ConvertToDecimalPercentage(string percentString)
+        {
+            // Remove the "%" symbol
+            string numericPart = percentString.TrimEnd('%');
+
+            // Convert to a double and divide by 100 to get the decimal equivalent
+            double percentValue = double.Parse(numericPart) / 100.0;
+
+            return percentValue;
+        }
+
+        //helper func for CoursesBox_SelectionChanged
+        public void PutCourseOnView(string jsonPath)
+        {
+
+            int index = System.IO.Path.GetFileNameWithoutExtension(jsonPath).IndexOf("+");
+            string sub = System.IO.Path.GetFileNameWithoutExtension(jsonPath).Substring(0,index);
+            if (!CoursesBox.Items.Contains(sub))
+            {
+                CoursesBox.Items.Add(sub);
+            }
+            
+            string filename = System.IO.Path.GetFileNameWithoutExtension(jsonPath);
+            string text = File.ReadAllText($"{JsonFilesPath}/{filename}.json");
+            CurrentJsonFilesPath = $"{JsonFilesPath}/{filename}";
+            List<Student> students1 = JsonSerializer.Deserialize<List<Student>>(text);
+            students1.Sort((s1, s2) => string.Compare(s1.Name, s2.Name, StringComparison.OrdinalIgnoreCase));
+            StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
+            StudentsListView.ItemsSource = students1;
+            AverageGradeTextBox.Text = $"{sub} - Average Grade: " + CalcAverage(students1).ToString("0.##");
+            this.Title = sub;
+            if (Grade != null)
+            {
+                Grade.Items.Clear();
+                StudentFinalGrade.Content = "Final Grade:";
+            }
+
+        }
+        
+        //listner for closing factor window
+        private void factorwindow_OnClosed(object sender, EventArgs e)
+        {
+            // Call the function in the MainWindow
+            PutCourseOnView(CurrentJsonFilesPath);
+        }
+        #endregion
+
+    }
 }

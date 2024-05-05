@@ -1,24 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.IO;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.Text.Json;
 
 namespace Final_ProjectCSharp
 {
-    /// <summary>
-    /// Interaction logic for factorWindow.xaml
-    /// </summary>
     public partial class factorWindow : Window
     {
         private string JsonFilesPath = "";
@@ -32,6 +17,7 @@ namespace Final_ProjectCSharp
             TasksShow();
         }
 
+        //add factor to the selected task
         private void AddFactorBtn_Click(object sender, RoutedEventArgs e)
         {
             string task = AssignmentListBox.SelectedItem.ToString();
@@ -77,6 +63,8 @@ namespace Final_ProjectCSharp
                 }
             }
         }
+
+        //loading task name from json
         private void TasksShow()
         {
             var newProp = new List<String>();
