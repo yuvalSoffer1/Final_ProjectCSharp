@@ -15,7 +15,7 @@ using System.Xml;
 using Final_ProjectCSharp;
 
 
-namespace Final_Project
+namespace Final_ProjectCSharp
 {
     public partial class MainWindow : Window
     {
@@ -44,7 +44,7 @@ namespace Final_Project
                 string[] fileNames = new string[jsonFiles.Length];
                 for (int i = 0; i < jsonFiles.Length; i++)
                 {
-                    int index = System.IO.Path.GetFileNameWithoutExtension(jsonFiles[i]).Length-11;
+                    int index = System.IO.Path.GetFileNameWithoutExtension(jsonFiles[i]).IndexOf("+");
                     fileNames[i] = System.IO.Path.GetFileNameWithoutExtension(jsonFiles[i]).Substring(0,index);
                 }
 
@@ -108,18 +108,18 @@ namespace Final_Project
                 students.Sort((s1, s2) => string.Compare(s1.Name, s2.Name, StringComparison.OrdinalIgnoreCase));
                 JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
                 string userJsonText = JsonSerializer.Serialize<List<Student>>(students, options);
-                string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileNameWithoutExtension(excelFilePath)}_{DateTime.Today.ToString("dd-MM-yyyy")}.json");
-                int index = System.IO.Path.GetFileName(jsonFilePath).Length - 16;
-                string sub = System.IO.Path.GetFileName(jsonFilePath).Substring(0, index);
+                string jsonFilePath = System.IO.Path.Combine(JsonFilesPath, $"{System.IO.Path.GetFileNameWithoutExtension(excelFilePath)}+{DateTime.Today.ToString("dd-MM-yyyy")}.json");
+                int index = System.IO.Path.GetFileNameWithoutExtension(jsonFilePath).IndexOf("+");
+                string sub = System.IO.Path.GetFileNameWithoutExtension(jsonFilePath).Substring(0, index);
                 CurrentJsonFilesPath = $"{jsonFilePath}";
                 File.WriteAllText(jsonFilePath, userJsonText);
-                if (!CoursesBox.Items.Contains(System.IO.Path.GetFileName(jsonFilePath.Substring(0,index))))
+                if (!CoursesBox.Items.Contains(sub))
                 {
-                    CoursesBox.Items.Add(System.IO.Path.GetFileNameWithoutExtension(jsonFilePath.Substring(0, index)));
+                    CoursesBox.Items.Add(sub);
                 }
                 StudentsListView.ClearValue(ItemsControl.ItemsSourceProperty);
                 StudentsListView.ItemsSource = students;
-                AverageGradeTextBox.Text = $"{System.IO.Path.GetFileNameWithoutExtension(jsonFilePath.Substring(0, index))} - Average Grade: " + CalcAverage(students).ToString("0.##");
+                AverageGradeTextBox.Text = $"{sub} - Average Grade: " + CalcAverage(students).ToString("0.##");
                 Grade.Items.Clear();
                 StudentFinalGrade.Content = "Final Grade:";
                 this.Title = $"{sub}";
@@ -170,18 +170,6 @@ namespace Final_Project
             return percentValue;
         }
 
-        private void StudentsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            Student selectedStudent = StudentsListView.SelectedItem as Student;
-
-            /*if (selectedStudent != null)
-            {
-                StudentNameTextBox.Text = selectedStudent.Name;
-                TaskGradesListView.ItemsSource = selectedStudent.Tasks;
-                StudentDetailsWindow.Show();
-            }*/
-        }
-
         private void TaskGradesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (StudentsListView.SelectedItem != null)
@@ -205,20 +193,11 @@ namespace Final_Project
             }
         }
 
-        private void AverageGradeTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
-        private void ListBoxProducts_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
         public void PutCourseOnView(string jsonPath)
         {
 
-            int index = System.IO.Path.GetFileName(jsonPath).Length - 16;
-            string sub = System.IO.Path.GetFileName(jsonPath).Substring(0,index);
+            int index = System.IO.Path.GetFileNameWithoutExtension(jsonPath).IndexOf("+");
+            string sub = System.IO.Path.GetFileNameWithoutExtension(jsonPath).Substring(0,index);
             if (!CoursesBox.Items.Contains(sub))
             {
                 CoursesBox.Items.Add(sub);
@@ -300,7 +279,7 @@ namespace Final_Project
             Object item = CoursesBox.SelectedItem;
             if (CoursesBox.SelectedIndex != 0)
             {
-                factorWindow factorwindow = new factorWindow(excelFilepath, CurrentJsonFilesPath);
+                factorWindow factorwindow = new factorWindow(JsonFilesPath, CurrentJsonFilesPath);
                 factorwindow.Closed += factorwindow_OnClosed; // Subscribe to the Closed event
                 factorwindow.Show();
                 if (AverageGradeTextBox != null)
@@ -390,14 +369,17 @@ namespace Final_Project
                 }
                 students = studentsFromJson;
                 string modifiedJson = JsonSerializer.Serialize(studentsFromJson);
-                File.WriteAllText($"{CurrentJsonFilesPath}", modifiedJson);
+                int index = System.IO.Path.GetFileNameWithoutExtension(CurrentJsonFilesPath).IndexOf("+");
+                string sub = System.IO.Path.GetFileNameWithoutExtension(CurrentJsonFilesPath).Substring(0, index);
+                CurrentJsonFilesPath = $"{JsonFilesPath}/{sub}+{DateTime.Today.ToString("dd-MM-yyyy")}";
+                File.WriteAllText($"{CurrentJsonFilesPath}.json", modifiedJson);
                 StudentFinalGrade.Content = $"Final Grade: {FinalGrade(selectedStudent).ToString("0.##")}";
-                AverageGradeTextBox.Text = $"{System.IO.Path.GetFileNameWithoutExtension(CurrentJsonFilesPath)} - Average Grade: " + CalcAverage(students).ToString("0.##");
+                AverageGradeTextBox.Text = $"{sub} - Average Grade: " + CalcAverage(students).ToString("0.##");
             }
         }
     }
 
-    public class Student
+    /*public class Student
     {
         public string Name { get; set; }
         public List<Details> Details { get; set; }
@@ -432,13 +414,13 @@ namespace Final_Project
 
             return stringBuilder.ToString();
         }
-    }
+    }*/
 
-    public class Details
+/*    public class Details
     {
         public string ColumnName { get; set; }
         public string Detail { get; set; }
 
-    }
+    }*/
 
 }

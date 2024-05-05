@@ -12,7 +12,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Final_Project;
 using System.Text.Json;
 
 namespace Final_ProjectCSharp
@@ -22,10 +21,13 @@ namespace Final_ProjectCSharp
     /// </summary>
     public partial class factorWindow : Window
     {
+        private string JsonFilesPath = "";
         private string currentJsonFilesPath = "";
-        public factorWindow(string excelFilePath,string CurrentJsonFilesPath)
+        
+        public factorWindow(string JsonFilesPath, string CurrentJsonFilesPath)
         {
             InitializeComponent();
+            this.JsonFilesPath = JsonFilesPath;
             currentJsonFilesPath = CurrentJsonFilesPath;
             TasksShow();
         }
@@ -62,8 +64,11 @@ namespace Final_ProjectCSharp
                             }
                         }
                         string modifiedJson = JsonSerializer.Serialize(studentsFromJson);
-                        File.WriteAllText($"{currentJsonFilesPath}", modifiedJson);
-                        MessageBox.Show($"Students in Course - {System.IO.Path.GetFileNameWithoutExtension(currentJsonFilesPath)}\ngot {factor} factor on task '{task}' ");
+                        int index = System.IO.Path.GetFileNameWithoutExtension(currentJsonFilesPath).IndexOf("+");
+                        string sub = System.IO.Path.GetFileNameWithoutExtension(currentJsonFilesPath).Substring(0, index);
+                        currentJsonFilesPath = $"{JsonFilesPath}/{sub}+{DateTime.Today.ToString("dd-MM-yyyy")}";
+                        File.WriteAllText($"{currentJsonFilesPath}.json", modifiedJson);
+                        MessageBox.Show($"Students in Course - {sub}\ngot {factor} factor on task '{task}' ");
                     }
                     else
                     {
